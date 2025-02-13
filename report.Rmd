@@ -1,0 +1,83 @@
+---
+title: "Analýza ojetých a nových sportovních vozů z webu sportovnivozy.cz"
+author: "Denis Vejrážka"
+date: "2025-02-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Úvod
+Budeme analyzovat automobily, jejichž data jsem nasbíral na webu sportovnivozy.cz pomoci scriptu scrap_all_cars.py. Ceny aut jsou v rozmezi od 50000 Kč do 29900000 Kč. K dispozici je 1241 vozů, z toho je 39 nových.
+
+```{r echo=FALSE}
+data <- read.csv("all_cars.csv")
+prices_nafree <- na.omit(data$Cena)
+price <- as.numeric(prices_nafree)
+library(psych)
+
+```
+
+### Rok výroby vozidel
+Rok výroby vozidel je ve velmi širokém intervalu. Výběr obsahuje jak veterány, tak nové modely vozidel. Histogram vykazuje levostranné zešikmení. 
+
+```{r echo=FALSE}
+year <- as.numeric(data$Rok)
+hist(year, xlab = "Rok výroby vozidla", ylab="Početnost", col="honeydew2", border="honeydew3", main = "Graf zobrazující roky výroby vozidel")
+
+```
+
+```{r echo=FALSE}
+describe(price)
+```
+
+```{r echo=FALSE}
+# Převod cen na miliony Kč
+price_mil <- price / 1e6  
+
+# Histogram s upravenou osou X
+hist(price_mil, 
+     breaks = 50, 
+     col = "dodgerblue3", 
+     border = "white", 
+     main = "Histogram cen sportovních vozidel", 
+     xlab = "Cena (mil. Kč)", 
+     ylab = "Počet vozidel", 
+     xlim = c(0, max(price_mil, na.rm = TRUE)), 
+     freq = TRUE)
+```
+
+
+Na základě analýzy cen vozidel v datasetu získaného z webu *sportovnivozy.cz* můžeme vyvodit následující závěry:
+
+- **Průměrná cena** vozidla v datasetu je **2 001 832 Kč**, ovšem **medián** činí pouze **999 000 Kč**. To znamená, že většina vozidel je levnějších než průměr a několik velmi drahých aut posouvá průměr nahoru.
+- **Nejlevnější vozidlo** v datasetu stojí **50 000 Kč**, zatímco **nejdražší** má cenu **29 900 000 Kč**. Celkový rozsah cen tedy činí **29 850 000 Kč**.
+- **Směrodatná odchylka** (**2 970 131 Kč**) ukazuje, že ceny aut jsou velmi rozptýlené, což potvrzuje i **vysoká špičatost rozdělení** (*kurtosis* = **20.33**).
+- **Šikmost rozdělení** (*skew* = **3.92**) naznačuje, že dataset obsahuje velké množství levnějších vozů a pouze několik extrémně drahých modelů, což odpovídá typickému rozložení cen **luxusních a sportovních automobilů**.
+
+Většina sportovních vozů se pohybuje v cenové relaci kolem **1 milionu Kč**, avšak existuje i menší počet exkluzivních modelů s výrazně vyšší cenou.
+
+
+### Počet najetých kilometrů
+```{r echo=FALSE}
+
+# Odstranit NA a "NA" stringy
+data <- data[!is.na(data$Kilometry) & data$Kilometry != "NA", ]
+data$Kilometry <- as.numeric(gsub("\\s*Km", "", data$Kilometry))
+
+# Filtrace nových vozů
+new_cars <- data[data$Kilometry == 0, ]
+num_new_cars <- nrow(new_cars)
+
+```
+
+### sdf
+```{r echo=FALSE}
+data$Objem.motoru <- gsub(" ccm", "", data$Objem.motoru)
+data$Objem.motoru <- as.numeric(data$Objem.motoru)
+litres <- na.omit(data$Objem.motoru)
+max(litres)
+```
+
