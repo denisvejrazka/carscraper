@@ -15,7 +15,6 @@ This project scrapes data about sports cars from the website sportovnivozy.cz us
 
     ```bash
     git clone https://github.com/denisvejrazka/carscraper.git
-    cd sportovni-vozy
     ```
 
 2. Set up the environment with Ansible:
