@@ -1,83 +1,115 @@
 ---
-title: "Analýza ojetých a nových sportovních vozů z webu sportovnivozy.cz"
+title: "Analysis of Used and New Sports Cars from sportovnivozy.cz"
 author: "Denis Vejrážka"
 date: "2025-02-13"
 output: html_document
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Úvod
-Budeme analyzovat automobily, jejichž data jsem nasbíral na webu sportovnivozy.cz pomoci scriptu scrap_all_cars.py. Ceny aut jsou v rozmezi od 50000 Kč do 29900000 Kč. K dispozici je 1241 vozů, z toho je 39 nových.
+### Introduction
+We will analyze cars whose data was collected from the website sportovnivozy.cz using the webscraping method the car prices range from 50,000 CZK to 29,900,000 CZK. There are 1,241 vehicles in total, of which 39 are new.
 
 ```{r echo=FALSE}
 data <- read.csv("all_cars.csv")
 prices_nafree <- na.omit(data$Cena)
 price <- as.numeric(prices_nafree)
 library(psych)
-
 ```
 
-### Rok výroby vozidel
-Rok výroby vozidel je ve velmi širokém intervalu. Výběr obsahuje jak veterány, tak nové modely vozidel. Histogram vykazuje levostranné zešikmení. 
+### Year of Manufacture
+The year of manufacture of the vehicles spans a very wide range, including both vintage cars and new models. The histogram shows a leftward skew.
 
 ```{r echo=FALSE}
 year <- as.numeric(data$Rok)
-hist(year, xlab = "Rok výroby vozidla", ylab="Početnost", col="honeydew2", border="honeydew3", main = "Graf zobrazující roky výroby vozidel")
-
+hist(year, xlab = "Year of Manufacture", ylab="Frequency", col="honeydew2", border="honeydew3", main = "Graph Showing Year of Manufacture of Cars")
 ```
 
 ```{r echo=FALSE}
-describe(price)
+# describe(price)
 ```
 
+### Price Analysis of Sports Cars
 ```{r echo=FALSE}
-# Převod cen na miliony Kč
 price_mil <- price / 1e6  
-
-# Histogram s upravenou osou X
 hist(price_mil, 
      breaks = 50, 
      col = "dodgerblue3", 
      border = "white", 
-     main = "Histogram cen sportovních vozidel", 
-     xlab = "Cena (mil. Kč)", 
-     ylab = "Počet vozidel", 
+     main = "Histogram of Sports Car Prices", 
+     xlab = "Price (million CZK)", 
+     ylab = "Number of Cars", 
      xlim = c(0, max(price_mil, na.rm = TRUE)), 
      freq = TRUE)
 ```
 
+Based on the price analysis of the cars in the dataset obtained from sportovnivozy.cz, we can conclude the following:
 
-Na základě analýzy cen vozidel v datasetu získaného z webu *sportovnivozy.cz* můžeme vyvodit následující závěry:
+- The **average price** of a car in the dataset is **2,001,832 CZK**, while the **median price** is only **999,000 CZK**. This suggests that most cars are priced below average, and a few very expensive cars push the average higher.
+- The **cheapest car** in the dataset costs **50,000 CZK**, while the **most expensive car** is priced at **29,900,000 CZK**, giving a total price range of **29,850,000 CZK**.
+- The **standard deviation** (**2,970,131 CZK**) shows that the prices of cars are highly dispersed, which is confirmed by the high **kurtosis** of the distribution (**kurtosis = 20.33**).
+- The **skewness** of the distribution (**skew = 3.92**) indicates that the dataset contains many lower-priced cars and only a few extremely expensive models, which is typical for luxury and sports car price distributions.
 
-- **Průměrná cena** vozidla v datasetu je **2 001 832 Kč**, ovšem **medián** činí pouze **999 000 Kč**. To znamená, že většina vozidel je levnějších než průměr a několik velmi drahých aut posouvá průměr nahoru.
-- **Nejlevnější vozidlo** v datasetu stojí **50 000 Kč**, zatímco **nejdražší** má cenu **29 900 000 Kč**. Celkový rozsah cen tedy činí **29 850 000 Kč**.
-- **Směrodatná odchylka** (**2 970 131 Kč**) ukazuje, že ceny aut jsou velmi rozptýlené, což potvrzuje i **vysoká špičatost rozdělení** (*kurtosis* = **20.33**).
-- **Šikmost rozdělení** (*skew* = **3.92**) naznačuje, že dataset obsahuje velké množství levnějších vozů a pouze několik extrémně drahých modelů, což odpovídá typickému rozložení cen **luxusních a sportovních automobilů**.
+Most sports cars are priced around **1 million CZK**, but there is also a smaller number of exclusive models with significantly higher prices.
 
-Většina sportovních vozů se pohybuje v cenové relaci kolem **1 milionu Kč**, avšak existuje i menší počet exkluzivních modelů s výrazně vyšší cenou.
-
-
-### Počet najetých kilometrů
 ```{r echo=FALSE}
-
-# Odstranit NA a "NA" stringy
 data <- data[!is.na(data$Kilometry) & data$Kilometry != "NA", ]
 data$Kilometry <- as.numeric(gsub("\\s*Km", "", data$Kilometry))
 
-# Filtrace nových vozů
 new_cars <- data[data$Kilometry == 0, ]
 num_new_cars <- nrow(new_cars)
-
 ```
 
-### sdf
-```{r echo=FALSE}
-data$Objem.motoru <- gsub(" ccm", "", data$Objem.motoru)
-data$Objem.motoru <- as.numeric(data$Objem.motoru)
-litres <- na.omit(data$Objem.motoru)
-max(litres)
+
+```{r echo=FALSE, message=FALSE}
+
+library(ggplot2)
+data$Kilometry <- as.numeric(gsub("\\s*Km", "", data$Kilometry)) / 1e5
+
+regression_data <- na.exclude(data[, c("Kilometry", "Cena")])
+
+model <- lm(Cena ~ Kilometry, data = regression_data)
+
+ggplot(regression_data, aes(x = Kilometry, y = Cena / 1e6)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  geom_smooth(method = "lm", col = "red") +
+  labs(title = "Relationship Between Price and Kilometers Driven (in 100,000 km)",
+       x = "Kilometers Driven (in 100,000 km)",
+       y = "Car Price (million CZK)") +
+  theme_minimal()
+
+#summary(model)
 ```
+
+
+```{r echo=FALSE, message=FALSE}
+
+data$Výkon <- as.numeric(gsub(" kW", "", data$Výkon))
+
+valid_cars <- data[!is.na(data$Výkon) & !is.na(data$Cena), ]
+
+model_performance <- lm(Cena ~ Výkon, data = valid_cars)
+
+#summary(model_performance)
+
+ggplot(valid_cars, aes(x = Výkon, y = Cena / 1e6)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  geom_smooth(method = "lm", col = "red") +
+  labs(title = "Relationship Between Performance and Price",
+       x = "Performance (kW)",
+       y = "Price (million CZK)") +
+  theme_minimal()
+```
+
+#### Evaluation of Results
+
+The first model examines the relationship between the car price and the kilometers driven. It shows that as the kilometers increase, the price of the car tends to decrease. This is intuitive, as cars with more mileage are generally less valuable. However, the model explains only about 10% of the variation in the price, suggesting that other factors—such as age, condition, or brand—are more significant price drivers than mileage alone.
+
+The second model looks at the relationship between the car’s engine power (in kW) and its price. The results show that cars with higher engine power tend to be more expensive. This is a logical conclusion, as more powerful engines are often found in higher-end models. This model performs better than the first, explaining about 41% of the variation in car prices, indicating that engine power is a more significant factor in determining car prices than the number of kilometers driven.
+
+
+
+
+
 

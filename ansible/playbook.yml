@@ -1,0 +1,22 @@
+---
+- name: Setup Carscraper project environment
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: Install required packages for Docker
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+        state: present
+
+    - name: Clone the project repository
+      git:
+        repo: 'git@your-repo-url'
+        dest: /home/user/carscraper
+
+    - name: Build and start the Docker containers
+      docker_compose:
+        project_src: /home/user/carscraper
+        restarted: yes
+        pull: yes

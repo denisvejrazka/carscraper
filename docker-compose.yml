@@ -1,0 +1,16 @@
+services:
+  scraper:
+    build: .
+    container_name: scraper
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: python3 scrap_all_cars.py
+
+  analysis:
+    build: .
+    container_name: analysis
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: Rscript -e "rmarkdown::render('report.Rmd')"
